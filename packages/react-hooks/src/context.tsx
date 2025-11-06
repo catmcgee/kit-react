@@ -5,9 +5,9 @@ import { createContext, useContext, useEffect, useMemo } from 'react';
 const SolanaClientContext = createContext<SolanaClient | null>(null);
 
 type ProviderProps = Readonly<{
-    children: ReactNode;
-    client?: SolanaClient;
-    config?: SolanaClientConfig;
+	children: ReactNode;
+	client?: SolanaClient;
+	config?: SolanaClientConfig;
 }>;
 
 /**
@@ -17,26 +17,26 @@ type ProviderProps = Readonly<{
  * construct an instance via {@link createClient}.
  */
 export function SolanaClientProvider({ children, client: providedClient, config }: ProviderProps) {
-    const client = useMemo(() => {
-        if (providedClient) {
-            return providedClient;
-        }
-        if (!config) {
-            throw new Error('SolanaClientProvider requires either a `client` or `config` prop.');
-        }
-        return createClient(config);
-    }, [config, providedClient]);
+	const client = useMemo(() => {
+		if (providedClient) {
+			return providedClient;
+		}
+		if (!config) {
+			throw new Error('SolanaClientProvider requires either a `client` or `config` prop.');
+		}
+		return createClient(config);
+	}, [config, providedClient]);
 
-    useEffect(() => {
-        if (providedClient) {
-            return;
-        }
-        return () => {
-            client.destroy();
-        };
-    }, [client, providedClient]);
+	useEffect(() => {
+		if (providedClient) {
+			return;
+		}
+		return () => {
+			client.destroy();
+		};
+	}, [client, providedClient]);
 
-    return <SolanaClientContext.Provider value={client}>{children}</SolanaClientContext.Provider>;
+	return <SolanaClientContext.Provider value={client}>{children}</SolanaClientContext.Provider>;
 }
 
 /**
@@ -45,9 +45,9 @@ export function SolanaClientProvider({ children, client: providedClient, config 
  * @throws If used outside of a provider.
  */
 export function useSolanaClient(): SolanaClient {
-    const client = useContext(SolanaClientContext);
-    if (!client) {
-        throw new Error('useSolanaClient must be used within a SolanaClientProvider.');
-    }
-    return client;
+	const client = useContext(SolanaClientContext);
+	if (!client) {
+		throw new Error('useSolanaClient must be used within a SolanaClientProvider.');
+	}
+	return client;
 }

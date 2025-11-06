@@ -2,10 +2,10 @@ import type { ClientLogger, LogLevel } from '../types';
 import { toErrorMessage } from '../utils';
 
 const defaultLevels: Record<LogLevel, number> = {
-    debug: 10,
-    error: 40,
-    info: 20,
-    warn: 30,
+	debug: 10,
+	error: 40,
+	info: 20,
+	warn: 30,
 };
 
 /**
@@ -15,25 +15,25 @@ const defaultLevels: Record<LogLevel, number> = {
  * @returns A {@link ClientLogger} instance ready for dependency injection.
  */
 export function createLogger(logger?: ClientLogger): ClientLogger {
-    if (logger) {
-        return logger;
-    }
-    return ({ data, level, message }) => {
-        const payload: Record<string, unknown> = data ? { ...data } : {};
-        switch (level) {
-            case 'error':
-                console.error(`[react-core] ${message}`, payload);
-                break;
-            case 'warn':
-                console.warn(`[react-core] ${message}`, payload);
-                break;
-            case 'info':
-                console.info(`[react-core] ${message}`, payload);
-                break;
-            default:
-                console.debug(`[react-core] ${message}`, payload);
-        }
-    };
+	if (logger) {
+		return logger;
+	}
+	return ({ data, level, message }) => {
+		const payload: Record<string, unknown> = data ? { ...data } : {};
+		switch (level) {
+			case 'error':
+				console.error(`[react-core] ${message}`, payload);
+				break;
+			case 'warn':
+				console.warn(`[react-core] ${message}`, payload);
+				break;
+			case 'info':
+				console.info(`[react-core] ${message}`, payload);
+				break;
+			default:
+				console.debug(`[react-core] ${message}`, payload);
+		}
+	};
 }
 
 /**
@@ -43,10 +43,10 @@ export function createLogger(logger?: ClientLogger): ClientLogger {
  * @returns Serializable shape containing the original error and message.
  */
 export function formatError(error: unknown): Record<string, unknown> {
-    return {
-        error,
-        message: toErrorMessage(error),
-    };
+	return {
+		error,
+		message: toErrorMessage(error),
+	};
 }
 
 /**
@@ -57,5 +57,5 @@ export function formatError(error: unknown): Record<string, unknown> {
  * @returns `true` when the level meets or exceeds the threshold.
  */
 export function isLevelAtLeast(level: LogLevel, threshold: LogLevel): boolean {
-    return defaultLevels[level] >= defaultLevels[threshold];
+	return defaultLevels[level] >= defaultLevels[threshold];
 }

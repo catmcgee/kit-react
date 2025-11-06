@@ -46,4 +46,4 @@ export function App({ children }) {
 
 - `pnpm build` – run both JS compilation and type definition emit
 - `pnpm test:typecheck` – strict type-checking without emit
-- `pnpm test:lint` / `pnpm test:prettier` – repo-standard linting
+- `pnpm lint` / `pnpm format` – Biome-powered linting and formatting

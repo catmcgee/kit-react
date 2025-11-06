@@ -16,64 +16,60 @@ import { createWatchers } from './watchers';
  * @returns Fully initialized {@link SolanaClient} instance.
  */
 export function createClient(config: SolanaClientConfig): SolanaClient {
-    const commitment = config.commitment ?? 'confirmed';
-    const websocketEndpoint = config.websocketEndpoint ?? config.endpoint;
-    const initialState = createInitialClientState({
-        commitment,
-        endpoint: config.endpoint,
-        websocketEndpoint,
-    });
-    const store: ClientStore = config.createStore
-        ? config.createStore(initialState)
-        : createClientStore(initialState);
-    const runtime: SolanaClientRuntime = {
-        rpc: createSolanaRpc(config.endpoint),
-        rpcSubscriptions: createSolanaRpcSubscriptions(websocketEndpoint),
-    };
-    const connectors = createWalletRegistry(config.walletConnectors ?? []);
-    const logger = createLogger(config.logger);
-    const actions = createActions({ connectors, logger, runtime, store });
-    const watchers = createWatchers({ logger, runtime, store });
-    const helpers = createClientHelpers(runtime, store);
-    store.setState(state => ({
-        ...state,
-        cluster: {
-            ...state.cluster,
-            status: { status: 'connecting' },
-        },
-        lastUpdatedAt: now(),
-    }));
-    actions
-        .setCluster(config.endpoint, { commitment, websocketEndpoint })
-        .catch(error =>
-            logger({
-                data: formatError(error),
-                level: 'error',
-                message: 'initial cluster setup failed',
-            }),
-        );
-    /**
-     * Resets the client's store back to its initial state.
-     *
-     * @returns Nothing; resets store contents.
-     */
-    function destroy(): void {
-        store.setState(() => initialState);
-    }
-    return {
-        actions,
-        config,
-        connectors,
-        destroy,
-        helpers,
-        runtime,
-        store,
-        solTransfer: helpers.solTransfer,
-        SolTransfer: helpers.solTransfer,
-        splToken: helpers.splToken,
-        SplToken: helpers.splToken,
-        SplHelper: helpers.splToken,
-        transaction: helpers.transaction,
-        watchers,
-    };
+	const commitment = config.commitment ?? 'confirmed';
+	const websocketEndpoint = config.websocketEndpoint ?? config.endpoint;
+	const initialState = createInitialClientState({
+		commitment,
+		endpoint: config.endpoint,
+		websocketEndpoint,
+	});
+	const store: ClientStore = config.createStore ? config.createStore(initialState) : createClientStore(initialState);
+	const runtime: SolanaClientRuntime = {
+		rpc: createSolanaRpc(config.endpoint),
+		rpcSubscriptions: createSolanaRpcSubscriptions(websocketEndpoint),
+	};
+	const connectors = createWalletRegistry(config.walletConnectors ?? []);
+	const logger = createLogger(config.logger);
+	const actions = createActions({ connectors, logger, runtime, store });
+	const watchers = createWatchers({ logger, runtime, store });
+	const helpers = createClientHelpers(runtime, store);
+	store.setState((state) => ({
+		...state,
+		cluster: {
+			...state.cluster,
+			status: { status: 'connecting' },
+		},
+		lastUpdatedAt: now(),
+	}));
+	actions.setCluster(config.endpoint, { commitment, websocketEndpoint }).catch((error) =>
+		logger({
+			data: formatError(error),
+			level: 'error',
+			message: 'initial cluster setup failed',
+		}),
+	);
+	/**
+	 * Resets the client's store back to its initial state.
+	 *
+	 * @returns Nothing; resets store contents.
+	 */
+	function destroy(): void {
+		store.setState(() => initialState);
+	}
+	return {
+		actions,
+		config,
+		connectors,
+		destroy,
+		helpers,
+		runtime,
+		store,
+		solTransfer: helpers.solTransfer,
+		SolTransfer: helpers.solTransfer,
+		splToken: helpers.splToken,
+		SplToken: helpers.splToken,
+		SplHelper: helpers.splToken,
+		transaction: helpers.transaction,
+		watchers,
+	};
 }

@@ -4,6 +4,7 @@ import { useStore } from 'zustand';
 import { useSolanaClient } from './context';
 
 type Selector<T> = (state: ClientState) => T;
+const identitySelector = (state: ClientState): ClientState => state;
 
 export function useClientStore(): ClientState;
 export function useClientStore<T>(selector: Selector<T>): T;
@@ -14,9 +15,8 @@ export function useClientStore<T>(selector: Selector<T>): T;
  * @returns Selected state slice that triggers re-render when it changes.
  */
 export function useClientStore<T>(selector?: Selector<T>): ClientState | T {
-    const client = useSolanaClient();
-    if (selector) {
-        return useStore(client.store, selector);
-    }
-    return useStore(client.store);
+	const client = useSolanaClient();
+	const appliedSelector = selector ?? (identitySelector as Selector<T>);
+	const slice = useStore(client.store, appliedSelector);
+	return selector ? slice : (slice as unknown as ClientState);
 }

@@ -5,15 +5,15 @@
  * @returns The same value with all nested objects frozen.
  */
 export function deepFreeze<T>(value: T): T {
-    if (typeof value !== 'object' || value === null) {
-        return value;
-    }
-    for (const key of Reflect.ownKeys(value)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const property = (value as any)[key];
-        deepFreeze(property);
-    }
-    return Object.freeze(value);
+	if (typeof value !== 'object' || value === null) {
+		return value;
+	}
+	const objectValue = value as Record<PropertyKey, unknown>;
+	for (const key of Reflect.ownKeys(objectValue)) {
+		const property = objectValue[key as keyof typeof objectValue];
+		deepFreeze(property as unknown);
+	}
+	return Object.freeze(value);
 }
 
 /**
@@ -22,7 +22,7 @@ export function deepFreeze<T>(value: T): T {
  * @returns Millisecond timestamp provided by {@link Date.now}.
  */
 export function now(): number {
-    return Date.now();
+	return Date.now();
 }
 
 /**
@@ -32,15 +32,15 @@ export function now(): number {
  * @returns String representation of the provided error.
  */
 export function toErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    if (typeof error === 'string') {
-        return error;
-    }
-    try {
-        return JSON.stringify(error);
-    } catch {
-        return String(error);
-    }
+	if (error instanceof Error) {
+		return error.message;
+	}
+	if (typeof error === 'string') {
+		return error;
+	}
+	try {
+		return JSON.stringify(error);
+	} catch {
+		return String(error);
+	}
 }

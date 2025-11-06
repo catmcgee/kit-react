@@ -5,9 +5,9 @@ import type { ClientState, ClientStore, ClusterState, ClusterStatus } from '../t
 import { deepFreeze } from '../utils';
 
 export type ClientStoreConfig = Readonly<{
-    commitment: Commitment;
-    endpoint: ClusterState['endpoint'];
-    websocketEndpoint?: ClusterState['websocketEndpoint'];
+	commitment: Commitment;
+	endpoint: ClusterState['endpoint'];
+	websocketEndpoint?: ClusterState['websocketEndpoint'];
 }>;
 
 /**
@@ -16,7 +16,7 @@ export type ClientStoreConfig = Readonly<{
  * @returns Cluster status in the idle state.
  */
 function createClusterStatus(): ClusterStatus {
-    return { status: 'idle' };
+	return { status: 'idle' };
 }
 
 /**
@@ -26,24 +26,24 @@ function createClusterStatus(): ClusterStatus {
  * @returns Deep-frozen client state snapshot.
  */
 export function createInitialClientState(config: ClientStoreConfig): ClientState {
-    const { commitment, endpoint, websocketEndpoint } = config;
-    const timestamp = Date.now();
-    return deepFreeze({
-        accounts: {},
-        cluster: {
-            commitment,
-            endpoint,
-            status: createClusterStatus(),
-            websocketEndpoint,
-        } satisfies ClusterState,
-        lastUpdatedAt: timestamp,
-        subscriptions: {
-            account: {},
-            signature: {},
-        },
-        transactions: {},
-        wallet: { status: 'disconnected' },
-    });
+	const { commitment, endpoint, websocketEndpoint } = config;
+	const timestamp = Date.now();
+	return deepFreeze({
+		accounts: {},
+		cluster: {
+			commitment,
+			endpoint,
+			status: createClusterStatus(),
+			websocketEndpoint,
+		} satisfies ClusterState,
+		lastUpdatedAt: timestamp,
+		subscriptions: {
+			account: {},
+			signature: {},
+		},
+		transactions: {},
+		wallet: { status: 'disconnected' },
+	});
 }
 
 /**
@@ -53,7 +53,7 @@ export function createInitialClientState(config: ClientStoreConfig): ClientState
  * @returns Zustand store instance containing the provided state.
  */
 export function createClientStore(initialState: ClientState): ClientStore {
-    return createStore<ClientState>(() => initialState);
+	return createStore<ClientState>(() => initialState);
 }
 
 /**
@@ -63,5 +63,5 @@ export function createClientStore(initialState: ClientState): ClientStore {
  * @returns Zustand store instance preloaded with the initial state.
  */
 export function createDefaultClientStore(config: ClientStoreConfig): ClientStore {
-    return createClientStore(createInitialClientState(config));
+	return createClientStore(createInitialClientState(config));
 }

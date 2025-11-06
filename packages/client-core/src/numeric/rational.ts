@@ -3,8 +3,8 @@ import { assertNonNegative, type BigintLike, toBigint } from './math';
 export type RoundingMode = 'ceil' | 'floor' | 'round';
 
 export type Ratio = Readonly<{
-    denominator: bigint;
-    numerator: bigint;
+	denominator: bigint;
+	numerator: bigint;
 }>;
 
 /**
@@ -16,24 +16,24 @@ export type Ratio = Readonly<{
  * @returns Quotient adjusted for rounding.
  */
 function divideWithRounding(dividend: bigint, divisor: bigint, rounding: RoundingMode): bigint {
-    if (divisor <= 0n) {
-        throw new RangeError('divisor must be positive');
-    }
-    const base = dividend / divisor;
-    const remainder = dividend % divisor;
-    if (remainder === 0n) {
-        return base;
-    }
-    switch (rounding) {
-        case 'ceil':
-            return base + 1n;
-        case 'round': {
-            const twice = remainder * 2n;
-            return twice >= divisor ? base + 1n : base;
-        }
-        default:
-            return base;
-    }
+	if (divisor <= 0n) {
+		throw new RangeError('divisor must be positive');
+	}
+	const base = dividend / divisor;
+	const remainder = dividend % divisor;
+	if (remainder === 0n) {
+		return base;
+	}
+	switch (rounding) {
+		case 'ceil':
+			return base + 1n;
+		case 'round': {
+			const twice = remainder * 2n;
+			return twice >= divisor ? base + 1n : base;
+		}
+		default:
+			return base;
+	}
 }
 
 /**
@@ -44,17 +44,17 @@ function divideWithRounding(dividend: bigint, divisor: bigint, rounding: Roundin
  * @returns Immutable ratio descriptor.
  */
 export function createRatio(numeratorInput: BigintLike, denominatorInput: BigintLike): Ratio {
-    const numerator = toBigint(numeratorInput, 'numerator');
-    const denominator = toBigint(denominatorInput, 'denominator');
-    if (denominator <= 0n) {
-        throw new RangeError('denominator must be positive');
-    }
-    assertNonNegative(numerator, 'numerator');
-    return Object.freeze({ denominator, numerator });
+	const numerator = toBigint(numeratorInput, 'numerator');
+	const denominator = toBigint(denominatorInput, 'denominator');
+	if (denominator <= 0n) {
+		throw new RangeError('denominator must be positive');
+	}
+	assertNonNegative(numerator, 'numerator');
+	return Object.freeze({ denominator, numerator });
 }
 
 export type ApplyRatioOptions = Readonly<{
-    rounding?: RoundingMode;
+	rounding?: RoundingMode;
 }>;
 
 /**
@@ -66,8 +66,8 @@ export type ApplyRatioOptions = Readonly<{
  * @returns Scaled amount as a bigint.
  */
 export function applyRatio(amount: bigint, ratio: Ratio, options: ApplyRatioOptions = {}): bigint {
-    assertNonNegative(amount, 'amount');
-    const dividend = amount * ratio.numerator;
-    const rounding = options.rounding ?? 'floor';
-    return divideWithRounding(dividend, ratio.denominator, rounding);
+	assertNonNegative(amount, 'amount');
+	const dividend = amount * ratio.numerator;
+	const rounding = options.rounding ?? 'floor';
+	return divideWithRounding(dividend, ratio.denominator, rounding);
 }

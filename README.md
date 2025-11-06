@@ -1,11 +1,26 @@
-# solana-react
+# Solana SDK
 
-React-focused tooling for building Solana applications. This workspace currently ships two packages:
+> ⚠️ Experimental: Solana SDK is an early-stage Solana SDK built on Solana Kit and slated to supersede Gill and web3.js.
+
+Solana SDK delivers React-focused tooling for building Solana applications. This workspace currently ships two packages:
 
 | Package | Description |
 | --- | --- |
 | [`@solana/react-hooks`](packages/react-hooks) | React bindings over the headless [`@solana/client-core`](../client-core) SDK. Supplies context providers plus hooks for wallet management, balances, transfers, and SPL helpers. |
 | [`@solana/example-react-hooks`](examples/react-hooks) | Tailwind/Vite demo application showcasing the hooks with a polished UI. Handy as a reference or quick-start template. |
+
+---
+
+## Development
+
+- Install deps with `pnpm install`.
+- `pnpm dev` fans out via Turborepo to any package exposing a `dev` script.
+- `pnpm build`, `pnpm lint`, `pnpm typecheck`, and `pnpm test` all proxy to `turbo run …` tasks.
+- Biome powers linting (`pnpm lint`) and formatting (`pnpm format`) across packages.
+- CI enforces Biome linting through `.github/workflows/biome.yml` on every push and pull request.
+- Unit tests are powered by Vitest (`vitest.config.ts`), with shared setup in `vitest.setup.ts`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get involved.
 
 ---
 

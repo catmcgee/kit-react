@@ -13,7 +13,7 @@ This package is not meant for production yet. It showcases the building blocks f
 
 - `pnpm build` - runs both `compile:js` and `compile:typedefs`
 - `pnpm test:typecheck` - validates TypeScript types without emitting
-- `pnpm test:lint` / `pnpm test:prettier` - repo standard linting
+- `pnpm lint` / `pnpm format` - Biome-powered linting and formatting
 
 ## Status
 

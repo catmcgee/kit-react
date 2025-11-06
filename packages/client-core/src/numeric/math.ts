@@ -9,8 +9,8 @@ const TEN = 10n;
  * @returns Power-of-ten bigint value.
  */
 export function pow10(exponent: number): bigint {
-    assertDecimals(exponent, 'exponent');
-    return TEN ** BigInt(exponent);
+	assertDecimals(exponent, 'exponent');
+	return TEN ** BigInt(exponent);
 }
 
 /**
@@ -21,9 +21,9 @@ export function pow10(exponent: number): bigint {
  * @throws When the value is negative.
  */
 export function assertNonNegative(value: bigint, label = 'value'): void {
-    if (value < 0n) {
-        throw new RangeError(`${label} must be non-negative`);
-    }
+	if (value < 0n) {
+		throw new RangeError(`${label} must be non-negative`);
+	}
 }
 
 /**
@@ -34,9 +34,9 @@ export function assertNonNegative(value: bigint, label = 'value'): void {
  * @throws When the value is not an integer between 0 and 38 inclusive.
  */
 export function assertDecimals(decimals: number, label = 'decimals'): void {
-    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 38) {
-        throw new RangeError(`${label} must be an integer between 0 and 38`);
-    }
+	if (!Number.isInteger(decimals) || decimals < 0 || decimals > 38) {
+		throw new RangeError(`${label} must be an integer between 0 and 38`);
+	}
 }
 
 /**
@@ -48,24 +48,24 @@ export function assertDecimals(decimals: number, label = 'decimals'): void {
  * @throws When the input is not a finite integer.
  */
 export function toBigint(value: BigintLike, label = 'value'): bigint {
-    if (typeof value === 'bigint') {
-        return value;
-    }
-    if (typeof value === 'number') {
-        if (!Number.isFinite(value) || !Number.isInteger(value)) {
-            throw new RangeError(`${label} must be a finite integer when provided as a number`);
-        }
-        if (!Number.isSafeInteger(value)) {
-            throw new RangeError(`${label} must be within the safe integer range when provided as a number`);
-        }
-        return BigInt(value);
-    }
-    const trimmed = value.trim();
-    const match = /^[-+]?\d+$/.exec(trimmed);
-    if (!match) {
-        throw new SyntaxError(`${label} must be an integer string`);
-    }
-    return BigInt(match[0]);
+	if (typeof value === 'bigint') {
+		return value;
+	}
+	if (typeof value === 'number') {
+		if (!Number.isFinite(value) || !Number.isInteger(value)) {
+			throw new RangeError(`${label} must be a finite integer when provided as a number`);
+		}
+		if (!Number.isSafeInteger(value)) {
+			throw new RangeError(`${label} must be within the safe integer range when provided as a number`);
+		}
+		return BigInt(value);
+	}
+	const trimmed = value.trim();
+	const match = /^[-+]?\d+$/.exec(trimmed);
+	if (!match) {
+		throw new SyntaxError(`${label} must be an integer string`);
+	}
+	return BigInt(match[0]);
 }
 
 /**
@@ -78,9 +78,9 @@ export function toBigint(value: BigintLike, label = 'value'): bigint {
  * @throws When the result is negative.
  */
 export function checkedAdd(lhs: bigint, rhs: bigint, label = 'result'): bigint {
-    const result = lhs + rhs;
-    assertNonNegative(result, label);
-    return result;
+	const result = lhs + rhs;
+	assertNonNegative(result, label);
+	return result;
 }
 
 /**
@@ -93,9 +93,9 @@ export function checkedAdd(lhs: bigint, rhs: bigint, label = 'result'): bigint {
  * @throws When the result is negative.
  */
 export function checkedSubtract(lhs: bigint, rhs: bigint, label = 'result'): bigint {
-    const result = lhs - rhs;
-    assertNonNegative(result, label);
-    return result;
+	const result = lhs - rhs;
+	assertNonNegative(result, label);
+	return result;
 }
 
 /**
@@ -108,9 +108,9 @@ export function checkedSubtract(lhs: bigint, rhs: bigint, label = 'result'): big
  * @throws When the result is negative.
  */
 export function checkedMultiply(lhs: bigint, rhs: bigint, label = 'result'): bigint {
-    const result = lhs * rhs;
-    assertNonNegative(result, label);
-    return result;
+	const result = lhs * rhs;
+	assertNonNegative(result, label);
+	return result;
 }
 
 /**
@@ -123,10 +123,10 @@ export function checkedMultiply(lhs: bigint, rhs: bigint, label = 'result'): big
  * @throws When the divisor is zero or the result is negative.
  */
 export function checkedDivide(dividend: bigint, divisor: bigint, label = 'result'): bigint {
-    if (divisor === 0n) {
-        throw new RangeError('divisor must be non-zero');
-    }
-    const result = dividend / divisor;
-    assertNonNegative(result, label);
-    return result;
+	if (divisor === 0n) {
+		throw new RangeError('divisor must be non-zero');
+	}
+	const result = dividend / divisor;
+	assertNonNegative(result, label);
+	return result;
 }

@@ -10,7 +10,7 @@ import { type BigintLike, toBigint } from '../numeric/math';
  * @returns Decimal string representation suitable for JSON.
  */
 export function bigintToJson(value: bigint): string {
-    return value.toString();
+	return value.toString();
 }
 
 /**
@@ -20,7 +20,7 @@ export function bigintToJson(value: bigint): string {
  * @returns Parsed bigint.
  */
 export function bigintFromJson(value: BigintLike): bigint {
-    return toBigint(value, 'bigint');
+	return toBigint(value, 'bigint');
 }
 
 /**
@@ -30,7 +30,7 @@ export function bigintFromJson(value: BigintLike): bigint {
  * @returns Decimal string representation of the lamport amount.
  */
 export function lamportsToJson(value: Lamports): string {
-    return value.toString();
+	return value.toString();
 }
 
 /**
@@ -40,5 +40,5 @@ export function lamportsToJson(value: Lamports): string {
  * @returns Parsed lamport amount.
  */
 export function lamportsFromJson(value: BigintLike): Lamports {
-    return lamports(value, 'lamports');
+	return lamports(value, 'lamports');
 }

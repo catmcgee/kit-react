@@ -3,14 +3,14 @@ import type { Commitment, SendableTransaction, Signature, Transaction } from '@s
 import { address } from '@solana/kit';
 import { getTransactionDecoder, getTransactionEncoder } from '@solana/transactions';
 import type {
-    SolanaSignAndSendTransactionFeature,
-    SolanaSignMessageFeature,
-    SolanaSignTransactionFeature,
+	SolanaSignAndSendTransactionFeature,
+	SolanaSignMessageFeature,
+	SolanaSignTransactionFeature,
 } from '@solana/wallet-standard-features';
 import {
-    SolanaSignAndSendTransaction,
-    SolanaSignMessage,
-    SolanaSignTransaction,
+	SolanaSignAndSendTransaction,
+	SolanaSignMessage,
+	SolanaSignTransaction,
 } from '@solana/wallet-standard-features';
 import { getWallets } from '@wallet-standard/app';
 import type { IdentifierString, Wallet, WalletAccount as WalletStandardAccount } from '@wallet-standard/base';
@@ -20,11 +20,11 @@ import { StandardConnect, StandardDisconnect } from '@wallet-standard/features';
 import type { WalletAccount, WalletConnector, WalletConnectorMetadata, WalletSession } from '../types';
 
 export type WalletStandardConnectorMetadata = Readonly<{
-    canAutoConnect?: boolean;
-    defaultChain?: IdentifierString;
-    icon?: string;
-    id?: string;
-    name?: string;
+	canAutoConnect?: boolean;
+	defaultChain?: IdentifierString;
+	icon?: string;
+	id?: string;
+	name?: string;
 }>;
 
 type CommitmentLike = 'confirmed' | 'finalized' | 'processed';
@@ -40,7 +40,7 @@ const transactionEncoder = getTransactionEncoder();
  * @returns Kebab-case identifier string derived from the wallet name.
  */
 function deriveConnectorId(wallet: Wallet): string {
-    return wallet.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+	return wallet.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
 /**
@@ -51,11 +51,11 @@ function deriveConnectorId(wallet: Wallet): string {
  * @throws When the wallet did not provide any accounts.
  */
 function getPrimaryAccount(accounts: readonly WalletStandardAccount[]): WalletStandardAccount {
-    const primary = accounts[0];
-    if (!primary) {
-        throw new Error('Wallet returned no accounts.');
-    }
-    return primary;
+	const primary = accounts[0];
+	if (!primary) {
+		throw new Error('Wallet returned no accounts.');
+	}
+	return primary;
 }
 
 /**
@@ -65,10 +65,10 @@ function getPrimaryAccount(accounts: readonly WalletStandardAccount[]): WalletSt
  * @returns A valid Wallet Standard commitment or `undefined` when unsupported.
  */
 function mapCommitment(commitment: unknown): CommitmentLike | undefined {
-    if (commitment === 'processed' || commitment === 'confirmed' || commitment === 'finalized') {
-        return commitment;
-    }
-    return undefined;
+	if (commitment === 'processed' || commitment === 'confirmed' || commitment === 'finalized') {
+		return commitment;
+	}
+	return undefined;
 }
 
 /**
@@ -78,11 +78,11 @@ function mapCommitment(commitment: unknown): CommitmentLike | undefined {
  * @returns Wallet account compatible with the client helpers.
  */
 function toSessionAccount(walletAccount: WalletStandardAccount): WalletAccount {
-    return {
-        address: address(walletAccount.address),
-        label: walletAccount.label,
-        publicKey: new Uint8Array(walletAccount.publicKey),
-    };
+	return {
+		address: address(walletAccount.address),
+		label: walletAccount.label,
+		publicKey: new Uint8Array(walletAccount.publicKey),
+	};
 }
 
 /**
@@ -92,8 +92,8 @@ function toSessionAccount(walletAccount: WalletStandardAccount): WalletAccount {
  * @returns Preferred chain identifier or `undefined` when not specified.
  */
 function getChain(account: WalletStandardAccount): IdentifierString | undefined {
-    const [preferred] = account.chains ?? [];
-    return preferred;
+	const [preferred] = account.chains ?? [];
+	return preferred;
 }
 
 /**
@@ -102,12 +102,12 @@ function getChain(account: WalletStandardAccount): IdentifierString | undefined 
  * @param wallet - Wallet instance implementing the optional disconnect feature.
  */
 async function disconnectWallet(wallet: Wallet): Promise<void> {
-    const disconnectFeature = wallet.features[StandardDisconnect] as
-        | StandardDisconnectFeature[typeof StandardDisconnect]
-        | undefined;
-    if (disconnectFeature) {
-        await disconnectFeature.disconnect();
-    }
+	const disconnectFeature = wallet.features[StandardDisconnect] as
+		| StandardDisconnectFeature[typeof StandardDisconnect]
+		| undefined;
+	if (disconnectFeature) {
+		await disconnectFeature.disconnect();
+	}
 }
 
 /**
@@ -118,160 +118,162 @@ async function disconnectWallet(wallet: Wallet): Promise<void> {
  * @returns A {@link WalletConnector} wrapping the provided wallet.
  */
 export function createWalletStandardConnector(
-    wallet: Wallet,
-    options: WalletStandardConnectorMetadata = {},
+	wallet: Wallet,
+	options: WalletStandardConnectorMetadata = {},
 ): WalletConnector {
-    const metadata: WalletConnectorMetadata = {
-        canAutoConnect: options.canAutoConnect ?? Boolean(wallet.features[StandardConnect]),
-        icon: options.icon ?? wallet.icon,
-        id: options.id ?? deriveConnectorId(wallet),
-        name: options.name ?? wallet.name,
-    };
+	const metadata: WalletConnectorMetadata = {
+		canAutoConnect: options.canAutoConnect ?? Boolean(wallet.features[StandardConnect]),
+		icon: options.icon ?? wallet.icon,
+		id: options.id ?? deriveConnectorId(wallet),
+		name: options.name ?? wallet.name,
+	};
 
-    /**
-     * Establishes a session with the wallet, optionally attempting a silent connection.
-     *
-     * @param connectionOptions - Optional connection configuration.
-     * @returns A wallet session that exposes signing helpers.
-     */
-    async function connect(
-        connectionOptions: Readonly<{ autoConnect?: boolean }> = {},
-    ): Promise<WalletSession> {
-        const connectFeature = wallet.features[StandardConnect] as
-            | StandardConnectFeature[typeof StandardConnect]
-            | undefined;
-        const shouldConnectSilently = Boolean(connectionOptions.autoConnect);
-        let walletAccounts = wallet.accounts;
-        if (connectFeature) {
-            const { accounts } = await connectFeature.connect({
-                silent: shouldConnectSilently || undefined,
-            });
-            if (accounts.length) {
-                walletAccounts = accounts;
-            }
-        }
+	/**
+	 * Establishes a session with the wallet, optionally attempting a silent connection.
+	 *
+	 * @param connectionOptions - Optional connection configuration.
+	 * @returns A wallet session that exposes signing helpers.
+	 */
+	async function connect(connectionOptions: Readonly<{ autoConnect?: boolean }> = {}): Promise<WalletSession> {
+		const connectFeature = wallet.features[StandardConnect] as
+			| StandardConnectFeature[typeof StandardConnect]
+			| undefined;
+		const shouldConnectSilently = Boolean(connectionOptions.autoConnect);
+		let walletAccounts = wallet.accounts;
+		if (connectFeature) {
+			const { accounts } = await connectFeature.connect({
+				silent: shouldConnectSilently || undefined,
+			});
+			if (accounts.length) {
+				walletAccounts = accounts;
+			}
+		}
 
-        const primaryAccount = getPrimaryAccount(walletAccounts);
-        const sessionAccount = toSessionAccount(primaryAccount);
+		const primaryAccount = getPrimaryAccount(walletAccounts);
+		const sessionAccount = toSessionAccount(primaryAccount);
 
-        const signMessageFeature = wallet.features[SolanaSignMessage] as
-            | SolanaSignMessageFeature[typeof SolanaSignMessage]
-            | undefined;
-        const signTransactionFeature = wallet.features[SolanaSignTransaction] as
-            | SolanaSignTransactionFeature[typeof SolanaSignTransaction]
-            | undefined;
-        const signAndSendFeature = wallet.features[SolanaSignAndSendTransaction] as
-            | SolanaSignAndSendTransactionFeature[typeof SolanaSignAndSendTransaction]
-            | undefined;
+		const signMessageFeature = wallet.features[SolanaSignMessage] as
+			| SolanaSignMessageFeature[typeof SolanaSignMessage]
+			| undefined;
+		const signTransactionFeature = wallet.features[SolanaSignTransaction] as
+			| SolanaSignTransactionFeature[typeof SolanaSignTransaction]
+			| undefined;
+		const signAndSendFeature = wallet.features[SolanaSignAndSendTransaction] as
+			| SolanaSignAndSendTransactionFeature[typeof SolanaSignAndSendTransaction]
+			| undefined;
 
-        const resolvedChain = options.defaultChain ?? getChain(primaryAccount);
+		const resolvedChain = options.defaultChain ?? getChain(primaryAccount);
 
-        /**
-         * Signs messages using the wallet standard feature when available.
-         *
-         * @param message - Message payload to sign.
-         * @returns Promise resolving with the signature.
-         */
-        const signMessage = signMessageFeature
-            ? async (message: Uint8Array) => {
-                  const [output] = await signMessageFeature.signMessage({
-                      account: primaryAccount,
-                      message,
-                  });
-                  return output.signature;
-              }
-            : undefined;
+		/**
+		 * Signs messages using the wallet standard feature when available.
+		 *
+		 * @param message - Message payload to sign.
+		 * @returns Promise resolving with the signature.
+		 */
+		const signMessage = signMessageFeature
+			? async (message: Uint8Array) => {
+					const [output] = await signMessageFeature.signMessage({
+						account: primaryAccount,
+						message,
+					});
+					return output.signature;
+				}
+			: undefined;
 
-        /**
-         * Signs transactions using the wallet standard feature when available.
-         *
-         * @param transaction - Transaction to sign.
-         * @returns Promise resolving with the signed transaction.
-         */
-        const signTransaction = signTransactionFeature
-            ? async (transaction: SendableTransaction & Transaction) => {
-                  const wireBytes = new Uint8Array(transactionEncoder.encode(transaction));
-                  const request = resolvedChain
-                      ? {
-                            account: primaryAccount,
-                            chain: resolvedChain,
-                            transaction: wireBytes,
-                        }
-                      : {
-                            account: primaryAccount,
-                            transaction: wireBytes,
-                        };
-                  const [output] = await signTransactionFeature.signTransaction(request);
-                  return transactionDecoder.decode(output.signedTransaction) as SendableTransaction & Transaction;
-              }
-            : undefined;
+		/**
+		 * Signs transactions using the wallet standard feature when available.
+		 *
+		 * @param transaction - Transaction to sign.
+		 * @returns Promise resolving with the signed transaction.
+		 */
+		const signTransaction = signTransactionFeature
+			? async (transaction: SendableTransaction & Transaction) => {
+					const wireBytes = new Uint8Array(transactionEncoder.encode(transaction));
+					const request = resolvedChain
+						? {
+								account: primaryAccount,
+								chain: resolvedChain,
+								transaction: wireBytes,
+							}
+						: {
+								account: primaryAccount,
+								transaction: wireBytes,
+							};
+					const [output] = await signTransactionFeature.signTransaction(request);
+					return transactionDecoder.decode(output.signedTransaction) as SendableTransaction & Transaction;
+				}
+			: undefined;
 
-        /**
-         * Signs and sends transactions using the wallet standard feature when available.
-         *
-         * @param transaction - Transaction to sign and submit.
-         * @param config - Optional commitment override for the submission.
-         * @returns Promise resolving with the submitted signature.
-         */
-        const sendTransaction = signAndSendFeature
-            ? async (transaction: SendableTransaction & Transaction, config?: Readonly<{ commitment?: Commitment }>) => {
-                  const wireBytes = new Uint8Array(transactionEncoder.encode(transaction));
-                  const chain: IdentifierString = options.defaultChain ?? getChain(primaryAccount) ?? 'solana:mainnet-beta';
-                  const [output] = await signAndSendFeature.signAndSendTransaction({
-                      account: primaryAccount,
-                      chain,
-                      options: {
-                          commitment: mapCommitment(config?.commitment),
-                      },
-                      transaction: wireBytes,
-                  });
-                  return base58Decoder.decode(output.signature) as Signature;
-              }
-            : undefined;
+		/**
+		 * Signs and sends transactions using the wallet standard feature when available.
+		 *
+		 * @param transaction - Transaction to sign and submit.
+		 * @param config - Optional commitment override for the submission.
+		 * @returns Promise resolving with the submitted signature.
+		 */
+		const sendTransaction = signAndSendFeature
+			? async (
+					transaction: SendableTransaction & Transaction,
+					config?: Readonly<{ commitment?: Commitment }>,
+				) => {
+					const wireBytes = new Uint8Array(transactionEncoder.encode(transaction));
+					const chain: IdentifierString =
+						options.defaultChain ?? getChain(primaryAccount) ?? 'solana:mainnet-beta';
+					const [output] = await signAndSendFeature.signAndSendTransaction({
+						account: primaryAccount,
+						chain,
+						options: {
+							commitment: mapCommitment(config?.commitment),
+						},
+						transaction: wireBytes,
+					});
+					return base58Decoder.decode(output.signature) as Signature;
+				}
+			: undefined;
 
-        /**
-         * Disconnects the session scoped to this connect invocation.
-         *
-         * @returns Promise that resolves once the wallet has been disconnected.
-         */
-        async function disconnectSession(): Promise<void> {
-            await disconnectWallet(wallet);
-        }
+		/**
+		 * Disconnects the session scoped to this connect invocation.
+		 *
+		 * @returns Promise that resolves once the wallet has been disconnected.
+		 */
+		async function disconnectSession(): Promise<void> {
+			await disconnectWallet(wallet);
+		}
 
-        return {
-            account: sessionAccount,
-            connector: metadata,
-            disconnect: disconnectSession,
-            sendTransaction,
-            signMessage,
-            signTransaction,
-        };
-    }
+		return {
+			account: sessionAccount,
+			connector: metadata,
+			disconnect: disconnectSession,
+			sendTransaction,
+			signMessage,
+			signTransaction,
+		};
+	}
 
-    /**
-     * Disconnects the wallet session when supported.
-     *
-     * @returns Promise that resolves once the wallet has been disconnected.
-     */
-    async function disconnect(): Promise<void> {
-        await disconnectWallet(wallet);
-    }
+	/**
+	 * Disconnects the wallet session when supported.
+	 *
+	 * @returns Promise that resolves once the wallet has been disconnected.
+	 */
+	async function disconnect(): Promise<void> {
+		await disconnectWallet(wallet);
+	}
 
-    /**
-     * Indicates whether the runtime environment appears to be browser based.
-     *
-     * @returns `true` when the wallet can be interacted with.
-     */
-    function isSupported(): boolean {
-        return typeof window !== 'undefined';
-    }
+	/**
+	 * Indicates whether the runtime environment appears to be browser based.
+	 *
+	 * @returns `true` when the wallet can be interacted with.
+	 */
+	function isSupported(): boolean {
+		return typeof window !== 'undefined';
+	}
 
-    return {
-        ...metadata,
-        connect,
-        disconnect,
-        isSupported,
-    };
+	return {
+		...metadata,
+		connect,
+		disconnect,
+		isSupported,
+	};
 }
 
 /**
@@ -282,14 +284,14 @@ export function createWalletStandardConnector(
  * @returns Connector representation of the wallet.
  */
 function mapWalletToConnector(
-    wallet: Wallet,
-    overrides?: (wallet: Wallet) => WalletStandardConnectorMetadata | undefined,
+	wallet: Wallet,
+	overrides?: (wallet: Wallet) => WalletStandardConnectorMetadata | undefined,
 ): WalletConnector {
-    return createWalletStandardConnector(wallet, overrides?.(wallet));
+	return createWalletStandardConnector(wallet, overrides?.(wallet));
 }
 
 export type WalletStandardDiscoveryOptions = Readonly<{
-    overrides?: (wallet: Wallet) => WalletStandardConnectorMetadata | undefined;
+	overrides?: (wallet: Wallet) => WalletStandardConnectorMetadata | undefined;
 }>;
 
 /**
@@ -299,18 +301,18 @@ export type WalletStandardDiscoveryOptions = Readonly<{
  * @returns A deduplicated list of wallet connectors.
  */
 export function getWalletStandardConnectors(options: WalletStandardDiscoveryOptions = {}): readonly WalletConnector[] {
-    const { get } = getWallets();
-    const connectors = get().map(wallet => mapWalletToConnector(wallet, options.overrides));
+	const { get } = getWallets();
+	const connectors = get().map((wallet) => mapWalletToConnector(wallet, options.overrides));
 
-    // Deduplicate by connector ID (keep first occurrence)
-    const seen = new Set<string>();
-    return connectors.filter(connector => {
-        if (seen.has(connector.id)) {
-            return false;
-        }
-        seen.add(connector.id);
-        return true;
-    });
+	// Deduplicate by connector ID (keep first occurrence)
+	const seen = new Set<string>();
+	return connectors.filter((connector) => {
+		if (seen.has(connector.id)) {
+			return false;
+		}
+		seen.add(connector.id);
+		return true;
+	});
 }
 
 /**
@@ -321,30 +323,30 @@ export function getWalletStandardConnectors(options: WalletStandardDiscoveryOpti
  * @returns Cleanup function that removes all listeners.
  */
 export function watchWalletStandardConnectors(
-    onChange: (connectors: readonly WalletConnector[]) => void,
-    options: WalletStandardDiscoveryOptions = {},
+	onChange: (connectors: readonly WalletConnector[]) => void,
+	options: WalletStandardDiscoveryOptions = {},
 ): () => void {
-    const { get, on } = getWallets();
-    const emit = () => {
-        const connectors = get().map(wallet => mapWalletToConnector(wallet, options.overrides));
+	const { get, on } = getWallets();
+	const emit = () => {
+		const connectors = get().map((wallet) => mapWalletToConnector(wallet, options.overrides));
 
-        // Deduplicate by connector ID (keep first occurrence)
-        const seen = new Set<string>();
-        const deduplicated = connectors.filter(connector => {
-            if (seen.has(connector.id)) {
-                return false;
-            }
-            seen.add(connector.id);
-            return true;
-        });
+		// Deduplicate by connector ID (keep first occurrence)
+		const seen = new Set<string>();
+		const deduplicated = connectors.filter((connector) => {
+			if (seen.has(connector.id)) {
+				return false;
+			}
+			seen.add(connector.id);
+			return true;
+		});
 
-        onChange(deduplicated);
-    };
-    emit();
-    const offRegister = on('register', emit);
-    const offUnregister = on('unregister', emit);
-    return () => {
-        offRegister();
-        offUnregister();
-    };
+		onChange(deduplicated);
+	};
+	emit();
+	const offRegister = on('register', emit);
+	const offUnregister = on('unregister', emit);
+	return () => {
+		offRegister();
+		offUnregister();
+	};
 }
