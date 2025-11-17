@@ -37,7 +37,7 @@ function applySigners(
 		return;
 	}
 	if (transaction instanceof VersionedTransactionClass) {
-		transaction.sign(signers);
+		transaction.sign([...signers]);
 	} else {
 		(transaction as LegacyTransaction).partialSign(...signers);
 	}

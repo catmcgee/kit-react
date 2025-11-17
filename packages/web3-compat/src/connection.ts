@@ -1,9 +1,12 @@
+import type { Address } from '@solana/addresses';
 import { createSolanaRpcClient, type SolanaRpcClient } from '@solana/client-core';
+import type { Commitment as KitCommitment, Signature } from '@solana/kit';
+import type { Base64EncodedWireTransaction } from '@solana/transactions';
 import {
 	type AccountInfo,
-	type Commitment,
 	type ConnectionConfig,
 	type DataSlice,
+	type Commitment as LegacyCommitment,
 	PublicKey,
 	type SendOptions,
 	type SignatureStatus,
@@ -15,6 +18,8 @@ import {
 	VersionedTransaction,
 } from '@solana/web3.js';
 
+import { toAddress as toKitAddress } from './bridges';
+
 type NormalizedCommitment = 'processed' | 'confirmed' | 'finalized';
 
 type RpcContext = Readonly<{
@@ -23,14 +28,14 @@ type RpcContext = Readonly<{
 }>;
 
 type AccountInfoConfig = Readonly<{
-	commitment?: Commitment;
+	commitment?: LegacyCommitment;
 	dataSlice?: DataSlice;
 	encoding?: 'base64';
 	minContextSlot?: number;
 }>;
 
 type ProgramAccountsConfig = Readonly<{
-	commitment?: Commitment;
+	commitment?: LegacyCommitment;
 	dataSlice?: DataSlice;
 	encoding?: 'base64' | 'base64+zstd';
 	filters?: ReadonlyArray<unknown>;
@@ -39,9 +44,9 @@ type ProgramAccountsConfig = Readonly<{
 }>;
 
 type ConnectionCommitmentInput =
-	| Commitment
+	| LegacyCommitment
 	| (ConnectionConfig & {
-			commitment?: Commitment;
+			commitment?: LegacyCommitment;
 	  })
 	| undefined;
 
@@ -73,9 +78,19 @@ type ProgramAccountsWithContext = Readonly<{
 	value: readonly ProgramAccountWire[];
 }>;
 
+type SignatureStatusConfigWithCommitment = SignatureStatusConfig & {
+	commitment?: LegacyCommitment;
+};
+
 const DEFAULT_COMMITMENT: NormalizedCommitment = 'confirmed';
 
-function normalizeCommitment(commitment?: Commitment | null): NormalizedCommitment | undefined {
+const DEFAULT_SIMULATION_CONFIG = Object.freeze({
+	encoding: 'base64' as const,
+	replaceRecentBlockhash: true as const,
+	sigVerify: false as const,
+});
+
+function normalizeCommitment(commitment?: LegacyCommitment | null): NormalizedCommitment | undefined {
 	if (commitment === undefined || commitment === null) {
 		return undefined;
 	}
@@ -99,15 +114,15 @@ function toBigInt(value: number | bigint | undefined): bigint | undefined {
 	return typeof value === 'bigint' ? value : BigInt(Math.trunc(value));
 }
 
-function toNumberOrNull(value: bigint | number | null | undefined): number | null | undefined {
-	if (value === null || value === undefined) return value;
-	return typeof value === 'number' ? value : Number(value);
-}
-
-function toAccountInfo(info: RpcAccount): AccountInfo<Buffer> {
+function toAccountInfo(info: RpcAccount, dataSlice?: DataSlice): AccountInfo<Buffer> {
 	const { data, executable, lamports, owner, rentEpoch } = info;
 	const [content, encoding] = Array.isArray(data) ? data : [data, 'base64'];
-	const buffer = encoding === 'base64' ? Buffer.from(content, 'base64') : Buffer.from(content);
+	let buffer = encoding === 'base64' ? Buffer.from(content, 'base64') : Buffer.from(content);
+	if (dataSlice) {
+		const start = dataSlice.offset ?? 0;
+		const end = start + (dataSlice.length ?? buffer.length);
+		buffer = buffer.subarray(start, end);
+	}
 	return {
 		data: buffer,
 		executable,
@@ -115,6 +130,51 @@ function toAccountInfo(info: RpcAccount): AccountInfo<Buffer> {
 		owner: new PublicKey(owner),
 		rentEpoch: typeof rentEpoch === 'number' ? rentEpoch : Number(rentEpoch),
 	};
+}
+
+function fromKitAccount(value: unknown): RpcAccount {
+	const account = (value ?? {}) as Record<string, unknown>;
+	const data = account.data as string | readonly [string, string] | undefined;
+	const lamports = account.lamports as number | bigint | undefined;
+	const ownerValue = account.owner as unknown;
+	const rentEpoch = account.rentEpoch as number | bigint | undefined;
+	const owner =
+		typeof ownerValue === 'string'
+			? ownerValue
+			: ownerValue instanceof PublicKey
+				? ownerValue.toBase58()
+				: typeof ownerValue === 'object' && ownerValue !== null && 'toString' in ownerValue
+					? String(ownerValue)
+					: '11111111111111111111111111111111';
+	return {
+		data: data ?? ['', 'base64'],
+		executable: Boolean(account.executable),
+		lamports: lamports ?? 0,
+		owner,
+		rentEpoch: rentEpoch ?? 0,
+	};
+}
+
+function toKitAddressFromInput(input: PublicKey | string): Address<string> {
+	return toKitAddress(input instanceof PublicKey ? input : input);
+}
+
+function toBase64WireTransaction(raw: RawTransactionInput): Base64EncodedWireTransaction {
+	if (raw instanceof Transaction || raw instanceof VersionedTransaction) {
+		const bytes = raw.serialize({
+			requireAllSignatures: false,
+			verifySignatures: false,
+		});
+		return Buffer.from(bytes).toString('base64') as Base64EncodedWireTransaction;
+	}
+	if (raw instanceof Uint8Array) {
+		return Buffer.from(raw).toString('base64') as Base64EncodedWireTransaction;
+	}
+	if (raw instanceof Buffer) {
+		return raw.toString('base64') as Base64EncodedWireTransaction;
+	}
+	const uint8 = Uint8Array.from(raw);
+	return Buffer.from(uint8).toString('base64') as Base64EncodedWireTransaction;
 }
 
 export class Connection {
@@ -139,15 +199,15 @@ export class Connection {
 		this.#client = createSolanaRpcClient({
 			endpoint,
 			websocketEndpoint,
-			commitment: commitment ?? DEFAULT_COMMITMENT,
+			commitment: (commitment ?? DEFAULT_COMMITMENT) as KitCommitment,
 		});
 	}
 
 	async getLatestBlockhash(
 		commitmentOrConfig?:
-			| Commitment
+			| LegacyCommitment
 			| {
-					commitment?: Commitment;
+					commitment?: LegacyCommitment;
 					maxSupportedTransactionVersion?: number;
 					minContextSlot?: number;
 			  },
@@ -157,18 +217,22 @@ export class Connection {
 	}> {
 		const baseCommitment =
 			typeof commitmentOrConfig === 'string' ? commitmentOrConfig : commitmentOrConfig?.commitment;
-		const commitment = baseCommitment ?? this.commitment ?? DEFAULT_COMMITMENT;
+		const commitment = normalizeCommitment(baseCommitment) ?? this.commitment ?? DEFAULT_COMMITMENT;
 		const minContextSlot =
 			typeof commitmentOrConfig === 'object' ? toBigInt(commitmentOrConfig.minContextSlot) : undefined;
-		const maxSupportedTransactionVersion =
-			typeof commitmentOrConfig === 'object' ? commitmentOrConfig.maxSupportedTransactionVersion : undefined;
-		const response = await this.#client.rpc
-			.getLatestBlockhash({
-				commitment,
-				maxSupportedTransactionVersion,
-				minContextSlot,
-			})
-			.send();
+		const requestOptions: Record<string, unknown> = {
+			commitment: commitment as KitCommitment,
+		};
+		if (minContextSlot !== undefined) {
+			requestOptions.minContextSlot = minContextSlot;
+		}
+		if (
+			typeof commitmentOrConfig === 'object' &&
+			commitmentOrConfig?.maxSupportedTransactionVersion !== undefined
+		) {
+			requestOptions.maxSupportedTransactionVersion = commitmentOrConfig.maxSupportedTransactionVersion;
+		}
+		const response = await this.#client.rpc.getLatestBlockhash(requestOptions as never).send();
 
 		return {
 			blockhash: response.value.blockhash,
@@ -176,26 +240,28 @@ export class Connection {
 		};
 	}
 
-	async getBalance(publicKey: PublicKey | string, commitment?: Commitment): Promise<number> {
-		const address = typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
-		const chosenCommitment = commitment ?? this.commitment ?? DEFAULT_COMMITMENT;
-		const result = await this.#client.rpc.getBalance(address, { commitment: chosenCommitment }).send();
+	async getBalance(publicKey: PublicKey | string, commitment?: LegacyCommitment): Promise<number> {
+		const address = toKitAddressFromInput(publicKey);
+		const chosenCommitment = normalizeCommitment(commitment) ?? this.commitment ?? DEFAULT_COMMITMENT;
+		const result = await this.#client.rpc
+			.getBalance(address, { commitment: chosenCommitment as KitCommitment })
+			.send();
 		return typeof result.value === 'number' ? result.value : Number(result.value);
 	}
 
 	async getAccountInfo<TAccountData = Buffer>(
 		publicKey: PublicKey | string,
-		commitmentOrConfig?: AccountInfoConfig | Commitment,
+		commitmentOrConfig?: AccountInfoConfig | LegacyCommitment,
 	): Promise<AccountInfo<TAccountData> | null> {
-		const address = typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
-		let commitment: Commitment | undefined;
+		const address = toKitAddressFromInput(publicKey);
+		let localCommitment: NormalizedCommitment | undefined;
 		let minContextSlot: bigint | undefined;
 		let dataSlice: DataSlice | undefined;
 		let encoding: 'base64' | undefined;
 		if (typeof commitmentOrConfig === 'string') {
-			commitment = commitmentOrConfig;
+			localCommitment = normalizeCommitment(commitmentOrConfig);
 		} else if (commitmentOrConfig) {
-			commitment = commitmentOrConfig.commitment;
+			localCommitment = normalizeCommitment(commitmentOrConfig.commitment);
 			if (commitmentOrConfig.minContextSlot !== undefined) {
 				minContextSlot = toBigInt(commitmentOrConfig.minContextSlot);
 			}
@@ -203,26 +269,35 @@ export class Connection {
 			encoding = commitmentOrConfig.encoding;
 		}
 
-		const response = await this.#client.rpc
-			.getAccountInfo(address, {
-				commitment: commitment ?? this.commitment ?? DEFAULT_COMMITMENT,
-				dataSlice,
-				encoding,
-				minContextSlot,
-			})
-			.send();
+		const requestOptions: Record<string, unknown> = {
+			commitment: (localCommitment ?? this.commitment ?? DEFAULT_COMMITMENT) as KitCommitment,
+		};
+		if (minContextSlot !== undefined) {
+			requestOptions.minContextSlot = minContextSlot;
+		}
+		if (encoding) {
+			requestOptions.encoding = encoding;
+		}
+		if (dataSlice) {
+			requestOptions.dataSlice = {
+				length: dataSlice.length,
+				offset: dataSlice.offset,
+			};
+		}
+
+		const response = await this.#client.rpc.getAccountInfo(address, requestOptions as never).send();
 
 		if (!response.value) {
 			return null;
 		}
-		const accountInfo = toAccountInfo(response.value);
+		const accountInfo = toAccountInfo(fromKitAccount(response.value), dataSlice);
 
 		return accountInfo as AccountInfo<TAccountData>;
 	}
 
 	async getProgramAccounts(
 		programId: PublicKey | string,
-		commitmentOrConfig?: Commitment | ProgramAccountsConfig,
+		commitmentOrConfig?: LegacyCommitment | ProgramAccountsConfig,
 	): Promise<
 		| Array<{
 				account: AccountInfo<Buffer | object>;
@@ -235,17 +310,17 @@ export class Connection {
 				}>
 		  >
 	> {
-		const id = typeof programId === 'string' ? programId : programId.toBase58();
-		let commitment: Commitment | undefined;
+		const id = toKitAddressFromInput(programId);
+		let localCommitment: NormalizedCommitment | undefined;
 		let dataSlice: DataSlice | undefined;
 		let filters: ReadonlyArray<unknown> | undefined;
 		let encoding: 'base64' | 'base64+zstd' | undefined;
 		let minContextSlot: bigint | undefined;
 		let withContext = false;
 		if (typeof commitmentOrConfig === 'string') {
-			commitment = commitmentOrConfig;
+			localCommitment = normalizeCommitment(commitmentOrConfig);
 		} else if (commitmentOrConfig) {
-			commitment = commitmentOrConfig.commitment;
+			localCommitment = normalizeCommitment(commitmentOrConfig.commitment);
 			dataSlice = commitmentOrConfig.dataSlice;
 			filters = commitmentOrConfig.filters;
 			encoding = commitmentOrConfig.encoding;
@@ -253,27 +328,38 @@ export class Connection {
 			withContext = Boolean(commitmentOrConfig.withContext);
 		}
 
-		const result = await this.#client.rpc
-			.getProgramAccounts(id, {
-				commitment: commitment ?? this.commitment ?? DEFAULT_COMMITMENT,
-				dataSlice,
-				encoding,
-				filters,
-				minContextSlot,
-				withContext,
-			})
-			.send();
+		const requestOptions: Record<string, unknown> = {
+			commitment: (localCommitment ?? this.commitment ?? DEFAULT_COMMITMENT) as KitCommitment,
+			withContext,
+		};
+		if (dataSlice) {
+			requestOptions.dataSlice = {
+				length: dataSlice.length,
+				offset: dataSlice.offset,
+			};
+		}
+		if (encoding) {
+			requestOptions.encoding = encoding;
+		}
+		if (filters) {
+			requestOptions.filters = filters.map((filter) => filter as never);
+		}
+		if (minContextSlot !== undefined) {
+			requestOptions.minContextSlot = minContextSlot;
+		}
+
+		const result = await this.#client.rpc.getProgramAccounts(id, requestOptions as never).send();
 
 		const mapProgramAccount = (entry: ProgramAccountWire) => {
 			const pubkey = new PublicKey(entry.pubkey);
 			return {
-				account: toAccountInfo(entry.account),
+				account: toAccountInfo(fromKitAccount(entry.account), dataSlice),
 				pubkey,
 			};
 		};
 
-		if (withContext && typeof (result as ProgramAccountsWithContext).context !== 'undefined') {
-			const contextual = result as ProgramAccountsWithContext;
+		if (withContext && typeof (result as unknown as ProgramAccountsWithContext).context !== 'undefined') {
+			const contextual = result as unknown as ProgramAccountsWithContext;
 			return {
 				context: {
 					apiVersion: contextual.context.apiVersion,
@@ -283,55 +369,75 @@ export class Connection {
 			};
 		}
 
-		return (result as readonly ProgramAccountWire[]).map(mapProgramAccount);
+		return (result as unknown as readonly ProgramAccountWire[]).map(mapProgramAccount);
 	}
 
 	async getSignatureStatuses(
 		signatures: readonly TransactionSignature[],
-		config?: SignatureStatusConfig,
+		config?: SignatureStatusConfigWithCommitment,
 	): Promise<RpcResponseWithContext<(SignatureStatus | null)[]>> {
+		const targetCommitment = normalizeCommitment(config?.commitment) ?? this.commitment ?? DEFAULT_COMMITMENT;
+		const kitSignatures = signatures.map((signature) => signature as unknown as Signature);
 		const response = await this.#client.rpc
-			.getSignatureStatuses(signatures, {
-				commitment: config?.commitment ?? this.commitment ?? DEFAULT_COMMITMENT,
+			.getSignatureStatuses(kitSignatures, {
+				commitment: targetCommitment as KitCommitment,
 				searchTransactionHistory: config?.searchTransactionHistory,
-			})
+			} as never)
 			.send();
 
+		const context = response.context as { slot: number | bigint; apiVersion?: string };
 		const normalizedContext: RpcContext = {
-			apiVersion: response.context.apiVersion,
-			slot: Number(response.context.slot),
+			apiVersion: context?.apiVersion,
+			slot: typeof context?.slot === 'bigint' ? Number(context.slot) : (context?.slot ?? 0),
 		};
 
-		const normalizedValues = response.value.map((status: SignatureStatus | null) => {
-			if (!status) {
-				return null;
-			}
-			return {
-				...status,
-				confirmations: toNumberOrNull(status.confirmations),
-				slot: Number(status.slot),
-			};
-		});
+		const normalizedValues = (response.value as readonly (SignatureStatus | null | Record<string, unknown>)[]).map(
+			(status) => {
+				if (!status) {
+					return null;
+				}
+				const record = status as Record<string, unknown>;
+				const slot = record.slot as number | bigint | undefined;
+				const confirmations = record.confirmations as number | bigint | null | undefined;
+				const normalizedConfirmations =
+					confirmations === null
+						? null
+						: confirmations === undefined
+							? null
+							: typeof confirmations === 'bigint'
+								? Number(confirmations)
+								: confirmations;
+				return {
+					err: (record.err ?? null) as SignatureStatus['err'],
+					confirmations: normalizedConfirmations,
+					confirmationStatus: record.confirmationStatus as SignatureStatus['confirmationStatus'],
+					slot: slot === undefined ? 0 : typeof slot === 'bigint' ? Number(slot) : slot,
+				} satisfies SignatureStatus;
+			},
+		);
 
 		return {
 			context: normalizedContext,
-			value: normalizedValues,
+			value: normalizedValues as (SignatureStatus | null)[],
 		};
 	}
-
 	async sendRawTransaction(rawTransaction: RawTransactionInput, options?: SendOptions): Promise<string> {
-		const bytes = this.#compileRawTransaction(rawTransaction);
-		const encoded = Buffer.from(bytes).toString('base64');
+		const wire = toBase64WireTransaction(rawTransaction);
 
 		const preflightCommitment =
-			options?.preflightCommitment ?? options?.commitment ?? this.commitment ?? DEFAULT_COMMITMENT;
+			normalizeCommitment(
+				options?.preflightCommitment ??
+					(options as (SendOptions & { commitment?: LegacyCommitment }) | undefined)?.commitment,
+			) ??
+			this.commitment ??
+			DEFAULT_COMMITMENT;
 		const maxRetries = options?.maxRetries === undefined ? undefined : toBigInt(options.maxRetries);
 		const minContextSlot = options?.minContextSlot === undefined ? undefined : toBigInt(options.minContextSlot);
-		const plan = this.#client.rpc.sendTransaction(encoded, {
+		const plan = this.#client.rpc.sendTransaction(wire, {
 			encoding: 'base64',
 			maxRetries,
 			minContextSlot,
-			preflightCommitment,
+			preflightCommitment: preflightCommitment as KitCommitment,
 			skipPreflight: options?.skipPreflight,
 		});
 
@@ -340,10 +446,11 @@ export class Connection {
 
 	async confirmTransaction(
 		signature: TransactionSignature,
-		commitment?: Commitment,
+		commitment?: LegacyCommitment,
 	): Promise<RpcResponseWithContext<SignatureStatus | null>> {
+		const normalizedCommitment = normalizeCommitment(commitment);
 		const response = await this.getSignatureStatuses([signature], {
-			commitment: commitment ?? this.commitment ?? DEFAULT_COMMITMENT,
+			commitment: normalizedCommitment ?? this.commitment ?? DEFAULT_COMMITMENT,
 			searchTransactionHistory: true,
 		});
 
@@ -357,37 +464,30 @@ export class Connection {
 		transaction: RawTransactionInput,
 		config?: SimulateTransactionConfig,
 	): Promise<RpcResponseWithContext<SimulatedTransactionResponse>> {
-		const bytes = this.#compileRawTransaction(transaction);
-		const encoded = Buffer.from(bytes).toString('base64');
-		const commitment = config?.commitment ?? this.commitment ?? DEFAULT_COMMITMENT;
+		const wire = toBase64WireTransaction(transaction);
+		const commitment = normalizeCommitment(config?.commitment) ?? this.commitment ?? DEFAULT_COMMITMENT;
+		const baseConfig = {
+			...(config ?? {}),
+			commitment,
+		};
+		const mergedConfig = {
+			...DEFAULT_SIMULATION_CONFIG,
+			...baseConfig,
+			commitment: commitment as KitCommitment,
+		};
+		const normalizedConfig =
+			mergedConfig.sigVerify === true && mergedConfig.replaceRecentBlockhash !== false
+				? { ...mergedConfig, replaceRecentBlockhash: false }
+				: mergedConfig;
 
-		const response = await this.#client.rpc
-			.simulateTransaction(encoded, {
-				...config,
-				commitment,
-				encoding: 'base64',
-			})
-			.send();
+		const response = await this.#client.rpc.simulateTransaction(wire, normalizedConfig as never).send();
 
 		return {
 			context: {
-				apiVersion: response.context.apiVersion,
-				slot: Number(response.context.slot),
+				apiVersion: (response.context as Record<string, unknown>)?.apiVersion as string | undefined,
+				slot: Number((response.context as Record<string, unknown>)?.slot ?? 0),
 			},
-			value: response.value,
+			value: response.value as unknown as SimulatedTransactionResponse,
 		};
-	}
-
-	#compileRawTransaction(raw: RawTransactionInput): Uint8Array {
-		if (raw instanceof Transaction) {
-			return raw.serialize({ requireAllSignatures: false });
-		}
-		if (raw instanceof VersionedTransaction) {
-			return raw.serialize();
-		}
-		if (Array.isArray(raw)) {
-			return Uint8Array.from(raw);
-		}
-		return raw instanceof Uint8Array ? raw : Uint8Array.from(raw);
 	}
 }

@@ -126,8 +126,16 @@ beforeEach(() => {
 describe('Connection', () => {
 	it('maps getLatestBlockhash response to web3.js shape', async () => {
 		const connection = new Connection(MOCK_ENDPOINT);
-		const result = await connection.getLatestBlockhash({ commitment: 'processed', minContextSlot: 12 });
-		expect(mockRpc.getLatestBlockhash).toHaveBeenCalledWith({ commitment: 'processed', minContextSlot: 12n });
+		const result = await connection.getLatestBlockhash({
+			commitment: 'processed',
+			minContextSlot: 12,
+			maxSupportedTransactionVersion: 0,
+		});
+		expect(mockRpc.getLatestBlockhash).toHaveBeenCalledWith({
+			commitment: 'processed',
+			maxSupportedTransactionVersion: 0,
+			minContextSlot: 12n,
+		});
 		expect(result).toEqual({
 			blockhash: 'MockBlockhash11111111111111111111111111111',
 			lastValidBlockHeight: 999,
