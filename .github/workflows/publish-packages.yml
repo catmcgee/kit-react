@@ -2,8 +2,15 @@ name: Version & Publish Packages
 
 on:
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      release_type:
+        description: 'Choose which release pipeline to run'
+        required: false
+        default: regular
+        type: choice
+        options:
+          - regular
+          - canary
   push:
     branches:
       - main
@@ -14,6 +21,8 @@ env:
 jobs:
   build-and-publish-to-npm:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TYPE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_type || 'regular' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,18 +45,32 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create Changesets Pull Request or Trigger an npm Publish
+        if: env.RELEASE_TYPE == 'regular'
         id: changesets
         uses: changesets/action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Choose final step
+        if: env.RELEASE_TYPE == 'regular'
         id: build-step-decider
         run: |
           echo "step-name=${{ steps.changesets.outputs.hasChangesets == 'false' && 'publish-packages' || 'build' }}" >> "$GITHUB_OUTPUT"
 
       - name: Run final step
+        if: env.RELEASE_TYPE == 'regular'
         run: pnpm ${{ steps.build-step-decider.outputs.step-name }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish Canary Snapshot
+        if: env.RELEASE_TYPE == 'canary'
+        run: |
+          pnpm changeset version --snapshot canary
+          pnpm build
+          pnpm changeset publish --tag canary
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
