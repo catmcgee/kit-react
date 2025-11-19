@@ -1,3 +1,5 @@
+'use client';
+
 import type { JSX, ReactNode } from 'react';
 import { useMemo, useRef } from 'react';
 import { type Cache, SWRConfig, type SWRConfiguration } from 'swr';

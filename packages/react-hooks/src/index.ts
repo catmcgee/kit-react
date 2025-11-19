@@ -1,3 +1,5 @@
+'use client';
+
 export { SolanaClientProvider, useSolanaClient } from './context';
 export {
 	useAccount,

@@ -1,3 +1,5 @@
+'use client';
+
 import type { SolanaClient, SolanaClientConfig } from '@solana/client';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
