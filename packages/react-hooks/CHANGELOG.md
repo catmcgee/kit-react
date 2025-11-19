@@ -1,5 +1,11 @@
 # @solana/react-hooks
 
+## 0.2.0
+
+### Minor Changes
+
+- [#8](https://github.com/solana-foundation/framework-kit/pull/8) [`7ff0fa5`](https://github.com/solana-foundation/framework-kit/commit/7ff0fa57e2026ca8f5cdaf5e612327e1c6c30ed2) Thanks [@GuiBibeau](https://github.com/GuiBibeau)! - Mark the package entry point and context providers as Client Components so Next.js always loads the client runtime.
+
 ## 0.1.0
 
 ### Minor Changes
