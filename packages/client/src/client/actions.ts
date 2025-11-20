@@ -463,24 +463,30 @@ export function createActions({ connectors, logger: inputLogger, runtime, store 
 	 * @returns Promise resolving with the signature for the airdrop transaction.
 	 */
 	async function requestAirdrop(address: Address, lamports: Lamports) {
-		if (!('requestAirdrop' in runtime.rpc)) {
-			throw new Error('The current RPC endpoint does not support airdrops.');
+		try {
+			const factory = airdropFactory({
+				rpc: runtime.rpc,
+				rpcSubscriptions: runtime.rpcSubscriptions,
+			} as Parameters<typeof airdropFactory>[0]);
+			const signature = await factory({
+				commitment: getCommitment('confirmed'),
+				lamports,
+				recipientAddress: address,
+			});
+			logger({
+				data: { address: address.toString(), lamports: lamports.toString(), signature },
+				level: 'info',
+				message: 'airdrop requested',
+			});
+			return signature;
+		} catch (error) {
+			logger({
+				data: { address: address.toString(), lamports: lamports.toString(), ...formatError(error) },
+				level: 'error',
+				message: 'airdrop request failed',
+			});
+			throw error;
 		}
-		const factory = airdropFactory({
-			rpc: runtime.rpc,
-			rpcSubscriptions: runtime.rpcSubscriptions,
-		} as Parameters<typeof airdropFactory>[0]);
-		const signature = await factory({
-			commitment: getCommitment('confirmed'),
-			lamports,
-			recipientAddress: address,
-		});
-		logger({
-			data: { address: address.toString(), lamports: lamports.toString(), signature },
-			level: 'info',
-			message: 'airdrop requested',
-		});
-		return signature;
 	}
 
 	return {

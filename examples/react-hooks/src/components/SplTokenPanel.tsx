@@ -72,6 +72,18 @@ export function SplTokenPanel() {
 					<CardTitle>USDC (Devnet)</CardTitle>
 					<CardDescription>
 						Inspect the balance helper and send SPL transfers using the <code>useSplToken</code> hook.
+						<br />
+						<br />
+						Need test USDC?{' '}
+						<a
+							href="https://faucet.circle.com/"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-primary underline hover:no-underline"
+						>
+							Get it from the faucet
+						</a>
+						.
 					</CardDescription>
 				</div>
 			</CardHeader>
