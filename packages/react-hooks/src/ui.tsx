@@ -18,17 +18,17 @@ type WalletConnectionState = Readonly<{
 	wallet: WalletSession | undefined;
 }>;
 
-export type UseWalletConnectionOptions = Readonly<{
+type WalletConnectionOptions = Readonly<{
 	connectors?: readonly WalletConnector[];
 }>;
 
-export type UseWalletConnectionParameters = UseWalletConnectionOptions;
+export type UseWalletConnectionParameters = WalletConnectionOptions;
 export type UseWalletConnectionReturnType = WalletConnectionState;
 
 /**
  * Collects everything needed to build wallet connection UIs into a single hook.
  */
-export function useWalletConnection(options: UseWalletConnectionOptions = {}): WalletConnectionState {
+export function useWalletConnection(options: WalletConnectionOptions = {}): WalletConnectionState {
 	const wallet = useWallet();
 	const connectWallet = useConnectWallet();
 	const disconnectWallet = useDisconnectWallet();
@@ -77,7 +77,7 @@ export function WalletConnectionManager({ children, connectors }: WalletConnecti
 	return <>{children(state)}</>;
 }
 
-type UseWalletModalStateOptions = UseWalletConnectionOptions &
+type WalletModalStateOptions = WalletConnectionOptions &
 	Readonly<{
 		closeOnConnect?: boolean;
 		initialOpen?: boolean;
@@ -93,14 +93,14 @@ export type WalletModalState = WalletConnectionState &
 		toggle(): void;
 	}>;
 
-export type UseWalletModalStateParameters = UseWalletModalStateOptions;
+export type UseWalletModalStateParameters = WalletModalStateOptions;
 export type UseWalletModalStateReturnType = WalletModalState;
 
 /**
  * Small state machine for wallet selection modals – keeps track of modal visibility and the currently
  * highlighted connector while reusing the connection state returned by {@link useWalletConnection}.
  */
-export function useWalletModalState(options: UseWalletModalStateOptions = {}): WalletModalState {
+export function useWalletModalState(options: WalletModalStateOptions = {}): WalletModalState {
 	const connection = useWalletConnection(options);
 	const [isOpen, setIsOpen] = useState(options.initialOpen ?? false);
 	const [selectedConnector, setSelectedConnector] = useState<string | null>(null);

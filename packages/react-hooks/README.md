@@ -285,6 +285,10 @@ Wrap a subtree with `<SolanaQueryProvider>` and call hooks like `useLatestBlockh
 Suspense later? Pass `suspense` to `SolanaQueryProvider` and wrap just the section that should pause in a
 local `<Suspense>` boundary—no hook changes required:
 
+The query provider ships SWR v2-aligned defaults: `revalidateOnFocus`/`revalidateOnReconnect`/`revalidateIfStale`
+are `true`, `dedupingInterval` is `2000`, and `focusThrottleInterval` is `5000`. Override them per-provider via the
+`query.config` prop or per-hook via the `swr` option.
+
 ```tsx
 import { SolanaQueryProvider, useBalance } from '@solana/react-hooks';
 import { Suspense } from 'react';
@@ -402,6 +406,7 @@ function SimulationLogs({ transaction }) {
 - Query hooks keep SWR options under `swr` for consistency (for example,
   `useProgramAccounts(address, { swr: { revalidateOnFocus: false } })`) and expose typed parameter
   and return aliases across all hooks.
+- Type helpers: use `UseHookNameParameters` / `UseHookNameReturnType` for public hooks.
 - Looking for examples? See `examples/react-hooks` for a ready-to-run, tabbed playground that wires
   the provider, hooks, and mock UIs together across wallet/state, transaction, and query demos.
 

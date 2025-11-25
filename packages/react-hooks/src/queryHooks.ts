@@ -35,16 +35,14 @@ export type UseLatestBlockhashParameters = Readonly<{
 	swr?: UseSolanaRpcQueryOptions<LatestBlockhashResponse>['swr'];
 }>;
 
-export type LatestBlockhashQueryResult = SolanaQueryResult<LatestBlockhashResponse> &
+export type UseLatestBlockhashReturnType = SolanaQueryResult<LatestBlockhashResponse> &
 	Readonly<{
 		blockhash: string | null;
 		contextSlot: bigint | null | undefined;
 		lastValidBlockHeight: bigint | null;
 	}>;
 
-export type UseLatestBlockhashReturnType = LatestBlockhashQueryResult;
-
-export function useLatestBlockhash(options: UseLatestBlockhashParameters = {}): LatestBlockhashQueryResult {
+export function useLatestBlockhash(options: UseLatestBlockhashParameters = {}): UseLatestBlockhashReturnType {
 	const {
 		commitment,
 		minContextSlot,
@@ -91,17 +89,15 @@ export type UseProgramAccountsParameters = Readonly<{
 	swr?: UseSolanaRpcQueryOptions<ProgramAccountsResponse>['swr'];
 }>;
 
-export type ProgramAccountsQueryResult = SolanaQueryResult<ProgramAccountsResponse> &
+export type UseProgramAccountsReturnType = SolanaQueryResult<ProgramAccountsResponse> &
 	Readonly<{
 		accounts: ProgramAccountsResponse;
 	}>;
 
-export type UseProgramAccountsReturnType = ProgramAccountsQueryResult;
-
 export function useProgramAccounts(
 	programAddress?: AddressLike,
 	options?: UseProgramAccountsParameters,
-): ProgramAccountsQueryResult {
+): UseProgramAccountsReturnType {
 	const { commitment, config, swr, disabled: disabledOption } = options ?? {};
 	const fetcher = useCallback(
 		async (client: SolanaClient) => {
@@ -144,19 +140,17 @@ export type UseSimulateTransactionParameters = Readonly<{
 	transaction?: SimulationInput | null;
 }>;
 
-export type SimulateTransactionQueryResult = SolanaQueryResult<SimulateTransactionResponse> &
+type SimulationInput = (SendableTransaction & Transaction) | Base64EncodedWireTransaction | string;
+
+export type UseSimulateTransactionReturnType = SolanaQueryResult<SimulateTransactionResponse> &
 	Readonly<{
 		logs: readonly string[];
 	}>;
 
-type SimulationInput = (SendableTransaction & Transaction) | Base64EncodedWireTransaction | string;
-
-export type UseSimulateTransactionReturnType = SimulateTransactionQueryResult;
-
 export function useSimulateTransaction(
 	transaction?: SimulationInput | null,
 	options?: UseSimulateTransactionParameters,
-): SimulateTransactionQueryResult {
+): UseSimulateTransactionReturnType {
 	const { commitment, config, refreshInterval, disabled: disabledOption, swr } = options ?? {};
 	const wire = useMemo<Base64EncodedWireTransaction | null>(() => {
 		if (!transaction) {

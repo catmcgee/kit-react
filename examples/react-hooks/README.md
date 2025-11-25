@@ -4,6 +4,8 @@ Demonstrates how to build a React interface with the experimental `@solana/react
 
 The example mirrors the vanilla proof-of-concept by wiring wallet discovery, SOL transfers, SPL token helpers, and live balance updates through idiomatic React components.
 
+All hooks expose `UseHookNameParameters` / `UseHookNameReturnType` aliases so you can type your own helpers consistently with the library.
+
 ## Compute-unit tuned transactions
 
 `useTransactionPool` now exposes the same `prepareAndSend` helper that lives in `@solana/client`. You can surface compute-unit simulation plus logging in a single call:

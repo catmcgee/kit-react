@@ -45,7 +45,7 @@ import useSWR, { type BareFetcher, type SWRConfiguration } from 'swr';
 
 import { useSolanaClient } from './context';
 import { type SolanaQueryResult, type UseSolanaRpcQueryOptions, useSolanaRpcQuery } from './query';
-import { type LatestBlockhashQueryResult, type UseLatestBlockhashParameters, useLatestBlockhash } from './queryHooks';
+import { type UseLatestBlockhashParameters, type UseLatestBlockhashReturnType, useLatestBlockhash } from './queryHooks';
 import { getSignatureStatusKey } from './queryKeys';
 import { useQuerySuspensePreference } from './querySuspenseContext';
 import { useClientStore } from './useClientStore';
@@ -577,7 +577,7 @@ export function useTransactionPool(config: UseTransactionPoolConfig = {}): Reado
 	): Promise<TransactionSignature>;
 	sign(options?: UseTransactionPoolSignOptions): ReturnType<TransactionHelper['sign']>;
 	toWire(options?: UseTransactionPoolSignOptions): ReturnType<TransactionHelper['toWire']>;
-	latestBlockhash: LatestBlockhashQueryResult;
+	latestBlockhash: UseLatestBlockhashReturnType;
 }> {
 	const initialInstructions = useMemo<TransactionInstructionList>(
 		() => config.instructions ?? [],
@@ -750,7 +750,7 @@ export type UseSignatureStatusParameters = UseSignatureStatusOptions &
 		signature?: SignatureLike;
 	}>;
 
-export type SignatureStatusResult = SolanaQueryResult<SignatureStatusValue | null> &
+type SignatureStatusState = SolanaQueryResult<SignatureStatusValue | null> &
 	Readonly<{
 		confirmationStatus: ConfirmationCommitment | null;
 		signatureStatus: SignatureStatusValue | null;
@@ -762,7 +762,7 @@ export type SignatureStatusResult = SolanaQueryResult<SignatureStatusValue | nul
 export function useSignatureStatus(
 	signatureInput?: SignatureLike,
 	options: UseSignatureStatusOptions = {},
-): SignatureStatusResult {
+): SignatureStatusState {
 	const { config, disabled: disabledOption, swr } = options;
 	const signature = useMemo(() => normalizeSignature(signatureInput), [signatureInput]);
 	const signatureKey = signature?.toString() ?? null;
@@ -808,7 +808,7 @@ export type UseWaitForSignatureOptions = Omit<UseSignatureStatusOptions, 'disabl
 		watchCommitment?: ConfirmationCommitment;
 	}>;
 
-export type WaitForSignatureResult = SignatureStatusResult &
+type WaitForSignatureState = SignatureStatusState &
 	Readonly<{
 		isError: boolean;
 		isSuccess: boolean;
@@ -823,7 +823,7 @@ export type WaitForSignatureResult = SignatureStatusResult &
 export function useWaitForSignature(
 	signatureInput?: SignatureLike,
 	options: UseWaitForSignatureOptions = {},
-): WaitForSignatureResult {
+): WaitForSignatureState {
 	const {
 		commitment = 'confirmed',
 		disabled: disabledOption,
@@ -907,16 +907,31 @@ export type UseAccountReturnType = ReturnType<typeof useAccount>;
 export type UseBalanceParameters = Readonly<{ address?: AddressLike; options?: UseBalanceOptions }>;
 export type UseBalanceReturnType = ReturnType<typeof useBalance>;
 
+export type UseClusterStateParameters = undefined;
 export type UseClusterStateReturnType = ReturnType<typeof useClusterState>;
+
+export type UseClusterStatusParameters = undefined;
 export type UseClusterStatusReturnType = ReturnType<typeof useClusterStatus>;
 
+export type UseConnectWalletParameters = undefined;
 export type UseConnectWalletReturnType = ReturnType<typeof useConnectWallet>;
+
+export type UseDisconnectWalletParameters = undefined;
 export type UseDisconnectWalletReturnType = ReturnType<typeof useDisconnectWallet>;
 
+export type UseSendTransactionParameters = undefined;
 export type UseSendTransactionReturnType = ReturnType<typeof useSendTransaction>;
-export type UseSignatureStatusReturnType = ReturnType<typeof useSignatureStatus>;
-export type UseWaitForSignatureReturnType = ReturnType<typeof useWaitForSignature>;
 
+export type UseSignatureStatusReturnType = SignatureStatusState;
+
+export type UseWaitForSignatureParameters = Readonly<{
+	options?: UseWaitForSignatureOptions;
+	signature?: SignatureLike;
+}>;
+
+export type UseWaitForSignatureReturnType = WaitForSignatureState;
+
+export type UseSolTransferParameters = undefined;
 export type UseSolTransferReturnType = ReturnType<typeof useSolTransfer>;
 export type UseSplTokenParameters = Readonly<{ mint: AddressLike; options?: UseSplTokenOptions }>;
 export type UseSplTokenReturnType = ReturnType<typeof useSplToken>;
@@ -924,6 +939,11 @@ export type UseSplTokenReturnType = ReturnType<typeof useSplToken>;
 export type UseTransactionPoolParameters = Readonly<{ config?: UseTransactionPoolConfig }>;
 export type UseTransactionPoolReturnType = ReturnType<typeof useTransactionPool>;
 
+export type UseWalletParameters = undefined;
 export type UseWalletReturnType = ReturnType<typeof useWallet>;
+
+export type UseWalletSessionParameters = undefined;
 export type UseWalletSessionReturnType = ReturnType<typeof useWalletSession>;
+
+export type UseWalletActionsParameters = undefined;
 export type UseWalletActionsReturnType = ReturnType<typeof useWalletActions>;

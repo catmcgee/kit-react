@@ -51,3 +51,7 @@ export function useSolanaClient(): SolanaClient {
 	}
 	return client;
 }
+
+export type SolanaClientProviderProps = ProviderProps;
+export type UseSolanaClientParameters = undefined;
+export type UseSolanaClientReturnType = SolanaClient;

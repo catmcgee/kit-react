@@ -24,6 +24,7 @@ export default function App() {
 	const clientConfig: SolanaClientConfig = {
 		commitment: 'confirmed',
 		endpoint: 'https://api.devnet.solana.com',
+		websocketEndpoint: 'wss://api.devnet.solana.com',
 		walletConnectors: [...phantom(), ...solflare(), ...backpack(), ...autoDiscover()],
 	};
 
