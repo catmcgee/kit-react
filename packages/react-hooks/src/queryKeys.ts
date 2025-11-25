@@ -1,11 +1,12 @@
 import { stableStringify, toAddress, toAddressString } from '@solana/client';
 import { getBase64EncodedWireTransaction, type SendableTransaction, type Transaction } from '@solana/kit';
 
+import type { UseSignatureStatusOptions, UseSignatureStatusParameters } from './hooks';
 import type {
-	UseSignatureStatusOptions,
-	UseSignatureStatusParameters,
-} from './hooks';
-import type { UseLatestBlockhashParameters, UseProgramAccountsParameters, UseSimulateTransactionParameters } from './queryHooks';
+	UseLatestBlockhashParameters,
+	UseProgramAccountsParameters,
+	UseSimulateTransactionParameters,
+} from './queryHooks';
 
 export type QueryKey = readonly unknown[];
 

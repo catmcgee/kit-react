@@ -45,12 +45,8 @@ import useSWR, { type BareFetcher, type SWRConfiguration } from 'swr';
 
 import { useSolanaClient } from './context';
 import { type SolanaQueryResult, type UseSolanaRpcQueryOptions, useSolanaRpcQuery } from './query';
+import { type LatestBlockhashQueryResult, type UseLatestBlockhashParameters, useLatestBlockhash } from './queryHooks';
 import { getSignatureStatusKey } from './queryKeys';
-import {
-	type LatestBlockhashQueryResult,
-	type UseLatestBlockhashParameters,
-	useLatestBlockhash,
-} from './queryHooks';
 import { useQuerySuspensePreference } from './querySuspenseContext';
 import { useClientStore } from './useClientStore';
 
@@ -270,7 +266,10 @@ type UseSplTokenOptions = Readonly<{
 	config?: Omit<SplTokenHelperConfig, 'commitment' | 'mint'>;
 	owner?: AddressLike;
 	revalidateOnFocus?: boolean;
-	swr?: Omit<SWRConfiguration<SplTokenBalanceResult, unknown, BareFetcher<SplTokenBalanceResult>>, 'fallback' | 'suspense'>;
+	swr?: Omit<
+		SWRConfiguration<SplTokenBalanceResult, unknown, BareFetcher<SplTokenBalanceResult>>,
+		'fallback' | 'suspense'
+	>;
 }>;
 
 /**

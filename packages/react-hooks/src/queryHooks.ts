@@ -1,4 +1,4 @@
-import { type AddressLike, toAddress, type SolanaClient } from '@solana/client';
+import { type AddressLike, type SolanaClient, toAddress } from '@solana/client';
 import {
 	type Base64EncodedWireTransaction,
 	type Commitment,
@@ -63,13 +63,18 @@ export function useLatestBlockhash(options: UseLatestBlockhashParameters = {}): 
 		},
 		[commitment, minContextSlot],
 	);
-	const query = useSolanaRpcQuery<LatestBlockhashResponse>('latestBlockhash', getLatestBlockhashKey(options), fetcher, {
-		disabled,
-		swr: {
-			refreshInterval,
-			...swr,
+	const query = useSolanaRpcQuery<LatestBlockhashResponse>(
+		'latestBlockhash',
+		getLatestBlockhashKey(options),
+		fetcher,
+		{
+			disabled,
+			swr: {
+				refreshInterval,
+				...swr,
+			},
 		},
-	});
+	);
 	return {
 		...query,
 		blockhash: query.data?.value.blockhash ?? null,
